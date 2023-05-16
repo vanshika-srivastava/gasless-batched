@@ -1,6 +1,6 @@
-<<<<<<< HEAD
-# batched-gasless
-BATCHED GASLESS 
+
+
+BATCHED GASLESS TRANSACTIONS
 =======
 # Sample Hardhat Project
 
