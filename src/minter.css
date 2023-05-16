@@ -1,0 +1,68 @@
+
+.container {
+    padding: 5px;
+    
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    display: flex;
+    padding-top: 50px;
+  justify-content: center;
+  align-items: center;
+  
+}
+
+  #recipient-address {
+    width: 320px; /* change this value to the desired width */
+    height: 20px; /* change this value to the desired height */
+  }
+
+
+  .container-box-1 {
+    border: 3px solid #b6701e;
+    border-style: ridge;
+    margin-left: 2px;
+    margin-right: 8px;
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+
+  }
+  
+  
+  .container-box-2 {
+    border: 2px solid #b6701e;
+    border-style: ridge;
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-left: 30px;
+    display: flex;
+  flex-direction: column;
+  align-items: center;
+  }
+
+.popup {
+    position: fixed;
+    top: 1rem; /* adjust this value to position the popup box vertically */
+    right: 1rem; /* adjust this value to position the popup box horizontally */
+    padding: 1rem;
+    background-color: #fff;
+    color: #b6701e;
+    border: 1px solid #000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    display: none; /* start with display set to none */
+  }
+  
+  body {
+    margin-top: 0;
+    transition: margin-top 0.5s ease-in-out; /* add a transition effect to smooth the margin change */
+  }
+  
+  body.popup-open {
+    margin-top: 3rem; /* adjust this value to match the height of the popup box */
+  }
