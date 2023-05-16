@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import logo from '/Users/abhishekkumar/batched-gasless/vite-project/public/logo.svg';
+import logo from '/vite-project/public/logo.svg';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
