@@ -6,7 +6,16 @@ require("@nomiclabs/hardhat-etherscan");
 dotenv.config();
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.9",
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.18'
+      },
+      {
+        version: '0.8.1'
+      }
+    ]
+  },
   networks: {
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
@@ -18,10 +27,7 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: {
-      polygonMumbai: process.env.POLYSCAN_API_KEY ?? "",
-      polygon: process.env.POLYSCAN_API_KEY ?? "",
-    },
+    apiKey: String(process.env.POLYSCAN_API_KEY) || "",
   },
 };
 
