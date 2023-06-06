@@ -16,14 +16,21 @@ const Minter: React.FC<Props> = ({ smartAccount, provider, acct }) => {
   const [recipientAddress, setRecipientAddress] = useState<string>("");
   const [nftIndexes, setNFTIndexes] = useState<number[]>([]);
   const [nftsAsBalanceCount, setNftsAsBalanceCount] = useState(0);
+  const [availableTokenIds, setAvailableTokenIds] = useState([]);
 
   const nftAddress = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 
+  // console.log(nftAddress, "NFT address $$$");
+
+  // console.log(smartAccount, "Smart account $$$$");
   
+  
+
+
   useEffect(() => {
     getNFTCount();
     getNFTIndexes();
-    
+
   }, []);
 
   useEffect(() => {
@@ -32,26 +39,28 @@ const Minter: React.FC<Props> = ({ smartAccount, provider, acct }) => {
 
 
   const getNFTCount = async () => {
+   
     const contract = new ethers.Contract(nftAddress, abi, provider);
     setNFTContract(contract);
 
     const count = await contract.balanceOf(smartAccount.address);
-    setNFTCount(count.toNumber());
+  
+    setNFTCount(count.toString());
   };
 
   const getNFTIndexes = async () => {
     const contract = new ethers.Contract(nftAddress, abi, provider);
     setNFTContract(contract);
-  
-const countdata = await contract.balanceOf(smartAccount.address);
-const nftIndexes = [];
 
-for (let i = 0; i < countdata; i++) {
-  const index = await contract.tokenOfOwnerByIndex(smartAccount.address, i);
-  nftIndexes.push(index.toNumber());
-}
+    const countdata = await contract.balanceOf(smartAccount.address);
+    const nftIndexes = [];
 
-setNFTIndexes(nftIndexes);
+    for (let i = 0; i < countdata; i++) {
+      const index = await contract.tokenOfOwnerByIndex(smartAccount.address, i);
+      nftIndexes.push(index.toString());
+    }
+
+    setNFTIndexes(nftIndexes);
   }
 
 
@@ -60,40 +69,53 @@ setNFTIndexes(nftIndexes);
 
   const mintNftAsBalance = async () => {
     try {
+
+      
       const contract = new ethers.Contract(nftAddress, abi, provider);
+     
       setNFTContract(contract);
 
       // Mint 4 NFTs
       const mintTx1 = await contract.populateTransaction.mint();
       const mintTx2 = await contract.populateTransaction.mint();
-      const mintTx3 = await contract.populateTransaction.mint();
-      const mintTx4 = await contract.populateTransaction.mint();
+      // const mintTx3 = await contract.populateTransaction.mint();
+      // const mintTx4 = await contract.populateTransaction.mint();
+
+     
 
       const tx1 = {
         to: nftAddress,
         data: mintTx1.data,
       };
+      
+      
       const tx2 = {
         to: nftAddress,
         data: mintTx2.data,
       };
-      const tx3 = {
-        to: nftAddress,
-        data: mintTx3.data,
-      };
-      const tx4 = {
-        to: nftAddress,
-        data: mintTx4.data,
-      };
+      // const tx3 = {
+      //   to: nftAddress,
+      //   data: mintTx3.data,
+      // };
+      // const tx4 = {
+      //   to: nftAddress,
+      //   data: mintTx4.data,
+      // };
+
+     
 
       const mintResponse = await smartAccount.sendTransactionBatch({
-        transactions: [tx1, tx2, tx3, tx4],
+        transactions: [tx1, tx2],
       });
-      await mintResponse.wait();
+
+     
+      const txReciept = await mintResponse.wait();
+      console.log('Tx Hash', txReciept.transactionHash);
 
       console.log({ mintResponse });
 
       getNFTCount();
+
     } catch (error) {
       console.log(error);
     }
@@ -110,7 +132,7 @@ setNFTIndexes(nftIndexes);
   
       const contract = new ethers.Contract(nftAddress, abi, provider);
       setNFTContract(contract);
-
+  
       const nftSelect = document.getElementById("nft-select") as HTMLSelectElement;
       const selectedNftId = parseInt(nftSelect.value);
   
@@ -137,46 +159,48 @@ setNFTIndexes(nftIndexes);
       await transferResponse.wait();
   
       console.log({ transferResponse });
-
-      const popup = document.createElement('div');
-popup.textContent = `Transfer successful. Hash: ${transferResponse.hash}`;
-popup.classList.add('popup'); // add the popup class to the element
-document.body.appendChild(popup);
-
-// show the popup box
-popup.style.display = 'block';
-
-// set a timeout to remove the popup box after 5 seconds (5000 milliseconds)
-setTimeout(() => {
-  popup.remove();
-}, 5000);
-
-      
   
+      const popup = document.createElement('div');
+      popup.textContent = `Transfer successful. Hash: ${transferResponse.hash}`;
+      popup.classList.add('popup');
+      document.body.appendChild(popup);
+  
+      // show the popup box
+      popup.style.display = 'block';
+  
+      // set a timeout to remove the popup box after 5 seconds (5000 milliseconds)
+      setTimeout(() => {
+        popup.remove();
+      }, 5000);
+  
+       // Update the availableTokenIds array by removing the transferred token ID
+    const updatedAvailableTokenIds = availableTokenIds.filter(id => id !== selectedNftId);
+    setAvailableTokenIds(updatedAvailableTokenIds);
+
       getNFTCount();
     } catch (error) {
       console.log(error);
     }
-  }
-     
+  };
+  
+
   const nftURL = `https://testnets.opensea.io/${smartAccount.address}`
   const transferURL = `https://testnets.opensea.io/${recipientAddress}`
 
   const sortedIndexes = nftIndexes.sort((a, b) => a - b);
 
 
-  
   return (
     <div className="container">
       <div className="container-box-1">
         <br></br>
         <br></br>
-       
-        {nftsAsBalanceCount >= 4 ? (
+
+        {nftsAsBalanceCount >= 2 ? (
           <>
             <div>
-            <p>You have {nftCount} NFTs in your balance</p>
-            <br></br>
+              <p>You have {nftCount} NFTs in your balance</p>
+              <br></br>
               <button onClick={mintNftAsBalance}>Mint NFTs as balance</button>
               <br></br>
               <br></br>
@@ -185,15 +209,15 @@ setTimeout(() => {
           </>
         ) : (
           <p>Please Mint more NFTs to add as balance for transfer
-            <p>
-              <button onClick={mintNftAsBalance}>Mint NFTs as balance</button>
-            </p>
+            <br></br>
+            <button onClick={mintNftAsBalance}>Mint NFTs as balance</button>
+
           </p>
         )}
-  
-        {nftsAsBalanceCount >= 4 && (
+
+        {nftsAsBalanceCount >= 2 && (
           <div className="container-box-2">
-            
+
             <div>
               <label htmlFor="recipient-address">Recipient Address : </label>
               <input
@@ -216,7 +240,7 @@ setTimeout(() => {
               <button onClick={mintAndTransferNft}>Mint and Transfer NFT</button>
               <br></br>
               <br></br>
-  
+
               <button style={{ marginLeft: '10px' }} onClick={() => window.open(transferURL, '_blank')}>View Transferred NFTs on OpenSea</button>
             </p>
           </div>
@@ -224,15 +248,11 @@ setTimeout(() => {
       </div>
     </div>
   );
-  
+
 }
 
 
 
-  
-  export default Minter ;
 
-
-  
-
+export default Minter;
 
