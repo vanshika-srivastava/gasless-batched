@@ -1,131 +1,274 @@
-import './App.css'
-import "@biconomy/web3-auth/dist/src/style.css"
-import { useState, useEffect, useRef } from 'react'
-import SocialLogin from "@biconomy/web3-auth"
-import { ChainId } from "@biconomy/core-types";
-import { ethers } from 'ethers'
+import "../minter.css"
+import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import abi from "../utils/abi.json";
 import SmartAccount from "@biconomy/smart-account";
-import Minter from "./components/minter.tsx";
+
+interface Props {
+  smartAccount: SmartAccount;
+  provider: any;
+  acct: any;
+}
+
+const Minter: React.FC<Props> = ({ smartAccount, provider, acct }) => {
+  const [nftContract, setNFTContract] = useState<any>(null);
+  const [nftCount, setNFTCount] = useState<number>(0);
+  const [recipientAddress, setRecipientAddress] = useState<string>("");
+  const [nftIndexes, setNFTIndexes] = useState<number[]>([]);
+  const [nftsAsBalanceCount, setNftsAsBalanceCount] = useState(0);
+  const [selectedNftId, setSelectedNftId] = useState('');
 
 
+  const nftAddress = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 
-export default function App() {
-  const [smartAccount, setSmartAccount] = useState<SmartAccount | null>(null)
-  const [interval, enableInterval] = useState(false)
-  const sdkRef = useRef<SocialLogin | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [provider, setProvider] = useState<any>(null);
-  const [acct, setAcct] = useState<any>(null);
 
   useEffect(() => {
-    let configureLogin:any
-    if (interval) {
-      configureLogin = setInterval(() => {
-        if (!!sdkRef.current?.provider) {
-          setupSmartAccount()
-          clearInterval(configureLogin)
-        }
-      }, 1000)
-    }
-  }, [interval])
+    getNFTCount();
+    getNFTIndexes();
 
-  async function login() {
-    if (!sdkRef.current) {
-      const socialLoginSDK = new SocialLogin()
-      const signature1 = await socialLoginSDK.whitelistUrl('http://localhost:3000/')
-      await socialLoginSDK.init({
-        chainId: ethers.utils.hexValue(ChainId.POLYGON_MUMBAI).toString(),
-        network: "testnet",
-        whitelistUrls: {
-          'http://localhost:3000/': signature1,
-        }
-      })
-      sdkRef.current = socialLoginSDK
-    }
-    if (!sdkRef.current.provider) {
-      sdkRef.current.showWallet()
-      enableInterval(true)
-    } else {
-      setupSmartAccount()
-    }
-  }
+  }, []);
 
-  async function setupSmartAccount() {
-    if (!sdkRef?.current?.provider) return
-    sdkRef.current.hideWallet()
-    setLoading(true)
-    const web3Provider = new ethers.providers.Web3Provider(
-      sdkRef.current.provider
-    )
-    setProvider(web3Provider)
+  useEffect(() => {
+    setNftsAsBalanceCount(nftCount);
+  }, [nftCount]);
+
+
+  const getNFTCount = async () => {
+   
+    const contract = new ethers.Contract(nftAddress, abi, provider);
+    setNFTContract(contract);
+
+    const count = await contract.balanceOf(smartAccount.address);
+  
+    setNFTCount(count.toString());
+  };
+
+  const getNFTIndexes = async () => {
+    const contract = new ethers.Contract(nftAddress, abi, provider);
+    setNFTContract(contract);
+  
+    const countdata = await contract.balanceOf(smartAccount.address);
+    const balance = parseInt(countdata.toString()); // Convert the BigNumber to a number
+  
+    const nftIndexes = [];
+  
+    for (let i = 0; i < balance; i++) {
+      const index = await contract.tokenOfOwnerByIndex(smartAccount.address, i);
+      nftIndexes.push(index.toString());
+    }
+  
+    setNFTIndexes(nftIndexes);
+  };
+  
+
+
+
+
+  const mintNftAsBalance = async () => {
     try {
-      const smartAccount = new SmartAccount(web3Provider, {
-        activeNetworkId: ChainId.POLYGON_MUMBAI,
-        supportedNetworksIds: [ChainId.POLYGON_MUMBAI],
-        networkConfig: [
-          {
-            chainId: ChainId.POLYGON_MUMBAI,
-            dappAPIKey: import.meta.env.VITE_BICONOMY_API_KEY,
-          },
-        ],
-      })
-      const acct = await smartAccount.init()
-      setAcct(acct)
-      setSmartAccount(smartAccount)
-      setLoading(false)
-    } catch (err) {
-      console.log('error setting up smart account... ', err)
-    }
-  }
-  
 
-  const logout = async () => {
-    if (!sdkRef.current) {
-      console.error('Web3Modal not initialized.')
-      return
-    }
-    await sdkRef.current.logout()
-    sdkRef.current.hideWallet()
-    setSmartAccount(null)
-    enableInterval(false)
-  }
-
-  console.log({ acct , provider})
-
- 
-  
-  return (
-    <div>
       
-    
-      {
-        !smartAccount && !loading && <button onClick={login}>Login to get your SCW address </button>
-      }
-      {
-        loading && <p>Loading account details...</p>
-      }
-      {
-        !!smartAccount && (
-          <div className="buttonWrapper">
-            <h3>Smart account address: {smartAccount.address} </h3>
-            <p></p>
+      const contract = new ethers.Contract(nftAddress, abi, provider);
+     
+      setNFTContract(contract);
 
-            <Minter smartAccount= {smartAccount} provider={provider} acct={acct} />
+      // Mint 4 NFTs
+      const mintTx1 = await contract.populateTransaction.mint();
+      const mintTx2 = await contract.populateTransaction.mint();
+      // const mintTx3 = await contract.populateTransaction.mint();
+      // const mintTx4 = await contract.populateTransaction.mint();
+
+     
+
+      const tx1 = {
+        to: nftAddress,
+        data: mintTx1.data,
+      };
+      
+      
+      const tx2 = {
+        to: nftAddress,
+        data: mintTx2.data,
+      };
+      // const tx3 = {
+      //   to: nftAddress,
+      //   data: mintTx3.data,
+      // };
+      // const tx4 = {
+      //   to: nftAddress,
+      //   data: mintTx4.data,
+      // };
+
+     
+
+      const mintResponse = await smartAccount.sendTransactionBatch({
+        transactions: [tx1, tx2],
+      });
+
+     
+      const txReciept = await mintResponse.wait();
+      console.log('Tx Hash', txReciept.transactionHash);
+
+      console.log({ mintResponse });
+
+      getNFTCount();
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
+  const mintAndTransferNft = async () => {
+    try {
+      if (!recipientAddress) {
+        console.log("Recipient address not specified");
+        return;
+      }
+  
+      const contract = new ethers.Contract(nftAddress, abi, provider);
+      setNFTContract(contract);
+  
+      const nftSelect = document.getElementById("nft-select") as HTMLSelectElement;
+      const selectedNftId = parseInt(nftSelect.value, 10);
+  
+      console.log('Balance:', nftsAsBalanceCount);
+      console.log('Selected NFT ID:', selectedNftId);
+  
+      // Mint a new NFT
+      const mintTx = await contract.populateTransaction.mint();
+  
+      // Transfer the selected NFT to the recipient address
+      const transferTx = await contract.populateTransaction[
+        "safeTransferFrom(address,address,uint256)"
+      ](smartAccount.address, recipientAddress, selectedNftId);
+  
+      const tx1 = {
+        to: nftAddress,
+        data: mintTx.data,
+      };
+      const tx2 = {
+        to: nftAddress,
+        data: transferTx.data,
+      };
+  
+      const transferResponse = await smartAccount.sendTransactionBatch({
+        transactions: [tx1, tx2],
+      });
+      await transferResponse.wait();
+  
+      console.log({ transferResponse });
+  
+      const popup = document.createElement('div');
+      popup.textContent = `Transfer successful. Hash: ${transferResponse.hash}`;
+      popup.classList.add('popup');
+      document.body.appendChild(popup);
+  
+      // show the popup box
+      popup.style.display = 'block';
+  
+      // set a timeout to remove the popup box after 5 seconds (5000 milliseconds)
+      setTimeout(() => {
+        popup.remove();
+      }, 5000);
+  
+      // Update the NFT count as balance
+      const count = await contract.balanceOf(smartAccount.address);
+      setNFTCount(count.toString());
+  
+      // Update the token ID list in the drop-down menu
+      const balance = parseInt(count.toString());
+      const updatedNFTIndexes = [];
+      if (selectedNftId <= balance) {
+        for (let i = 0; i < balance; i++) {
+          const index = await contract.tokenOfOwnerByIndex(smartAccount.address, i);
+          updatedNFTIndexes.push(index.toString());
+        }
+      }
+      setNFTIndexes(updatedNFTIndexes);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+
+  const nftURL = `https://testnets.opensea.io/${smartAccount.address}`
+  const transferURL = `https://testnets.opensea.io/${recipientAddress}`
+
+  const sortedIndexes = nftIndexes.sort((a, b) => a - b);
+
+  return (
+    <div className="container">
+      <div className="container-box-1">
+        <br></br>
+        <br></br>
+
+        {nftsAsBalanceCount >= 2 ? (
+          <>
+            <div>
+              <p>You have {nftCount} NFTs in your balance</p>
+              <br></br>
+              <button onClick={mintNftAsBalance}>Mint NFTs as balance</button>
+              <br></br>
+              <br></br>
+              <button style={{ marginLeft: '10px' }} onClick={() => window.open(nftURL, '_blank')}>View minted on SCW address on OpenSea</button>
+            </div>
+          </>
+        ) : (
+          <p>Please Mint more NFTs to add as balance for transfer
+            <br></br>
+            <button onClick={mintNftAsBalance}>Mint NFTs as balance</button>
+
+          </p>
+        )}
+
+        {nftsAsBalanceCount >= 2 && (
+          <div className="container-box-2">
+
+            <div>
+              <label htmlFor="recipient-address">Recipient Address : </label>
+              <input
+                id="recipient-address"
+                type="text"
+                value={recipientAddress}
+                onChange={(e) => setRecipientAddress(e.target.value)}
+              />
+            </div>
             <br></br>
             <br></br>
-            <button onClick={logout}>Logout</button>
+            <div className="selectnft">
+              Select an NFT ID to Transfer : <select id="nft-select" value={selectedNftId} onChange={(e) => setSelectedNftId(e.target.value)}>
+                {sortedIndexes.map((index) => (
+                <option key={index} value={index}>
+                  {index}
+                  </option>
+                  ))}
+                  </select>
+
+            </div>
+            <p>
+              <button onClick={mintAndTransferNft}>Mint and Transfer NFT</button>
+              <br></br>
+              <br></br>
+
+              <button style={{ marginLeft: '10px' }} onClick={() => window.open(transferURL, '_blank')}>View Transferred NFTs on OpenSea</button>
+            </p>
           </div>
-        )
-      }
-     <p>
-      <br></br>
-      <br></br>
-      <a href="https://docs.biconomy.io/introduction/overview" target="_blank" className="read-the-docs">
-  Click here to check out the docs
-    </a></p>
-
+        )}
+      </div>
     </div>
-  )
+  );
+
 }
+
+
+
+
+export default Minter;
+
+
+
+
 
 
